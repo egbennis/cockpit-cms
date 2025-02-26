@@ -1,4 +1,4 @@
-FROM php:8.1-apache
+FROM php:8.3-apache
 
 # Install dependencies
 RUN apt-get update && apt-get install -y \
@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     libzip-dev \
     unzip \
+    git \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) gd zip
 
@@ -35,11 +36,13 @@ RUN echo '<Directory /var/www/html>\n\
 </Directory>' > /etc/apache2/conf-available/cockpit.conf \
     && a2enconf cockpit
 
-# Configure Apache for dynamic port
-RUN sed -i 's/80/${PORT}/g' /etc/apache2/sites-available/000-default.conf /etc/apache2/ports.conf
+# Create a script to handle the dynamic port
+RUN echo '#!/bin/bash\n\
+sed -i "s/80/$PORT/g" /etc/apache2/sites-available/000-default.conf /etc/apache2/ports.conf\n\
+echo "Listen $PORT" > /etc/apache2/ports.conf\n\
+echo "ServerName localhost" >> /etc/apache2/apache2.conf\n\
+apache2-foreground' > /usr/local/bin/start-apache.sh \
+    && chmod +x /usr/local/bin/start-apache.sh
 
-# Expose port
-EXPOSE ${PORT}
-
-# Start Apache
-CMD ["apache2-foreground"]
+# Start Apache with our custom script
+CMD ["/usr/local/bin/start-apache.sh"]
