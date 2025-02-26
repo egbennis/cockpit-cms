@@ -9,7 +9,17 @@ RUN apt-get update && apt-get install -y \
     libsqlite3-dev \
     unzip \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install -j$(nproc) gd zip pdo pdo_sqlite
+    && docker-php-ext-install -j$(nproc) gd zip pdo pdo_sqlite opcache
+
+# Configure PHP and OpCache
+RUN echo "memory_limit=256M" > /usr/local/etc/php/conf.d/memory-limit.ini \
+    && echo "upload_max_filesize=64M" > /usr/local/etc/php/conf.d/upload-max-filesize.ini \
+    && echo "post_max_size=64M" > /usr/local/etc/php/conf.d/post-max-size.ini \
+    && echo "error_reporting = E_ERROR | E_WARNING | E_PARSE | E_CORE_ERROR | E_CORE_WARNING | E_COMPILE_ERROR | E_COMPILE_WARNING | E_RECOVERABLE_ERROR" > /usr/local/etc/php/conf.d/error-reporting.ini \
+    && echo "opcache.enable=1" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.memory_consumption=128" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.interned_strings_buffer=8" >> /usr/local/etc/php/conf.d/opcache.ini \
+    && echo "opcache.max_accelerated_files=4000" >> /usr/local/etc/php/conf.d/opcache.ini
 
 # Enable Apache modules
 RUN a2enmod rewrite headers
@@ -51,6 +61,9 @@ chown -R www-data:www-data /var/www/html/storage\n\
 sed -i "s/80/$PORT/g" /etc/apache2/sites-available/000-default.conf /etc/apache2/ports.conf\n\
 apache2-foreground' > /usr/local/bin/start-apache.sh \
     && chmod +x /usr/local/bin/start-apache.sh
+
+# Expose port (this is for documentation, Render will use $PORT)
+EXPOSE 80
 
 # Start Apache with our custom script
 CMD ["/usr/local/bin/start-apache.sh"]
