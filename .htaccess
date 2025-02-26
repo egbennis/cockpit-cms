@@ -1,0 +1,16 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Redirect requests to existing files directly
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteRule ^ - [L]
+    
+    # Redirect all other requests to index.php
+    RewriteRule ^ index.php [L]
+</IfModule>
+
+# Allow access
+<Files *>
+    Order Allow,Deny
+    Allow from all
+</Files>
