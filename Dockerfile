@@ -12,7 +12,10 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install -j$(nproc) gd zip pdo pdo_sqlite
 
 # Enable Apache modules
-RUN a2enmod rewrite
+RUN a2enmod rewrite headers
+
+# Set ServerName globally to suppress the warning
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
 # Set working directory
 WORKDIR /var/www/html
@@ -44,8 +47,6 @@ RUN echo '#!/bin/bash\n\
 # Make sure storage is writable on startup\n\
 chmod -R 0777 /var/www/html/storage\n\
 chown -R www-data:www-data /var/www/html/storage\n\
-# Set document root environment variable\n\
-export APACHE_DOCUMENT_ROOT=/var/www/html\n\
 # Configure port\n\
 sed -i "s/80/$PORT/g" /etc/apache2/sites-available/000-default.conf /etc/apache2/ports.conf\n\
 apache2-foreground' > /usr/local/bin/start-apache.sh \
