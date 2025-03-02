@@ -38,6 +38,9 @@ RUN mkdir -p ./storage/cache ./storage/tmp ./storage/uploads ./storage/data ./st
     && chmod -R 0777 ./storage \
     && chown -R www-data:www-data ./storage
 
+# Add this line after your existing storage directory creation
+VOLUME /var/www/html/storage
+
 # Set correct permissions for the entire app
 RUN chown -R www-data:www-data /var/www/html \
     && find /var/www/html -type d -exec chmod 755 {} \; \
