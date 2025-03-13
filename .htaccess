@@ -1,3 +1,4 @@
+# Enable Apache rewrite engine
 <IfModule mod_rewrite.c>
     RewriteEngine On
     
@@ -8,6 +9,41 @@
     # Redirect all other requests to index.php
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# CORS Configuration - support both staging and production domains
+<IfModule mod_headers.c>
+    # Check if origin matches allowed domains
+    SetEnvIf Origin "^https://(staging-tgs|app)\.theglowsquad\.net$" ALLOWED_ORIGIN=$0
+    Header set Access-Control-Allow-Origin %{ALLOWED_ORIGIN}e env=ALLOWED_ORIGIN
+    
+    # If environment variable approach doesn't work, uncomment these instead:
+    # Header set Access-Control-Allow-Origin "https://staging-tgs.theglowsquad.net"
+    # Header append Access-Control-Allow-Origin "https://app.theglowsquad.net"
+    
+    # Required CORS headers
+    Header set Access-Control-Allow-Methods "GET, POST, OPTIONS, PUT, DELETE"
+    Header set Access-Control-Allow-Headers "Origin, Content-Type, Accept, Authorization, X-Requested-With, Cockpit-Token"
+    Header set Access-Control-Allow-Credentials "true"
+    Header set Access-Control-Max-Age "86400"
+    
+    # Handle preflight OPTIONS requests (to avoid redirecting OPTIONS to index.php)
+    <If "%{REQUEST_METHOD} == 'OPTIONS'">
+        Header set Status "200"
+        Header set Content-Length "0"
+        Header set Content-Type "text/plain"
+        # Stop processing after setting headers for OPTIONS
+        RewriteEngine On
+        RewriteRule ^ - [L]
+    </If>
+</IfModule>
+
+# Set proper Content-Type for PDFs specifically
+<FilesMatch "\.pdf$">
+    Header set Content-Type "application/pdf"
+    # Ensure CORS headers are set for PDFs
+    SetEnvIf Origin "^https://(staging-tgs|app)\.theglowsquad\.net$" ALLOWED_ORIGIN=$0
+    Header set Access-Control-Allow-Origin %{ALLOWED_ORIGIN}e env=ALLOWED_ORIGIN
+</FilesMatch>
 
 # Allow access
 <Files *>
